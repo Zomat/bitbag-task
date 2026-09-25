@@ -1,0 +1,4 @@
+sylius:
+    order:
+        admin_note:
+            max_length: 'The admin note cannot be longer than {{ limit }} characters.'

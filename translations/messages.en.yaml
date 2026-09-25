@@ -1,0 +1,5 @@
+app:
+    ui:
+        admin_note: Admin note
+        admin_note_placeholder: Add an internal note visible only to administrators...
+        admin_note_remove: Remove note
