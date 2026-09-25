@@ -1,0 +1,9 @@
+app_admin_order_update_admin_note:
+    path: /%sylius_admin.path_name%/orders/{id}/admin-note
+    methods: [PUT]
+    controller: App\Controller\Admin\OrderAdminNoteController::update
+
+app_admin_order_remove_admin_note:
+    path: /%sylius_admin.path_name%/orders/{id}/admin-note
+    methods: [DELETE]
+    controller: App\Controller\Admin\OrderAdminNoteController::remove

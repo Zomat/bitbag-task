@@ -1,0 +1,4 @@
+app:
+    ui:
+        admin_note_updated: The admin note has been updated.
+        admin_note_removed: The admin note has been removed.

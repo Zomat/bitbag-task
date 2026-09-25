@@ -284,3 +284,8 @@ sylius_twig_hooks:
         'sylius_shop.base#javascripts':
             app_javascripts:
                 template: 'shop/javascripts.html.twig'
+
+        'sylius_admin.order.show.content.sections#right':
+            admin_note:
+                template: 'admin/order/component/admin_note_form.html.twig'
+                priority: 150

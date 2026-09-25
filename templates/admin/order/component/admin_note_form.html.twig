@@ -1,0 +1,36 @@
+{% set order = hookable_metadata.context.resource %}
+{% set form = app_order_admin_note_form(order) %}
+
+{% form_theme form '@SyliusAdmin/shared/form_theme.html.twig' %}
+
+<div class="card mb-3">
+    <div class="card-header">
+        <div class="card-title">
+            {{ 'app.ui.admin_note'|trans }}
+        </div>
+    </div>
+    <div class="card-body" {{ sylius_test_html_attribute('admin-note') }}>
+        {{ form_start(form, {
+            'action': path('app_admin_order_update_admin_note', {id: order.id}),
+            'attr': {'class': 'ui loadable form', 'novalidate': 'novalidate'},
+        }) }}
+        {{ form_widget(form.adminNote, sylius_test_form_attribute('admin-note-content')|sylius_merge_recursive({'attr': {'placeholder': 'app.ui.admin_note_placeholder'|trans}})) }}
+        {{ form_errors(form.adminNote) }}
+        <button type="submit" class="btn btn-primary mt-3" {{ sylius_test_html_attribute('admin-note-save-button') }}>
+            {{ ux_icon('tabler:device-floppy') }}
+            {{ 'sylius.ui.save_changes'|trans }}
+        </button>
+        {{ form_end(form, {'render_rest': false}) }}
+
+        {% if order.adminNote is not null %}
+            <form method="post" action="{{ path('app_admin_order_remove_admin_note', {id: order.id}) }}" class="mt-2">
+                <input type="hidden" name="_method" value="DELETE">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token('app_admin_order_remove_admin_note') }}">
+                <button type="submit" class="btn btn-outline-danger" {{ sylius_test_html_attribute('admin-note-delete-button') }}>
+                    {{ ux_icon('tabler:trash') }}
+                    {{ 'app.ui.admin_note_remove'|trans }}
+                </button>
+            </form>
+        {% endif %}
+    </div>
+</div>
