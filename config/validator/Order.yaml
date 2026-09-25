@@ -1,0 +1,7 @@
+App\Entity\Order\Order:
+    properties:
+        adminNote:
+            - Length:
+                  max: !php/const App\Entity\Order\AdminNoteAwareInterface::MAX_ADMIN_NOTE_LENGTH
+                  maxMessage: sylius.order.admin_note.max_length
+                  groups: ["sylius"]
