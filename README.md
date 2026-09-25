@@ -1,109 +1,41 @@
-<p align="center">
-    <a href="https://sylius.com" target="_blank">
-        <picture>
-          <source media="(prefers-color-scheme: dark)" srcset="https://media.sylius.com/sylius-logo-800-dark.png">
-          <source media="(prefers-color-scheme: light)" srcset="https://media.sylius.com/sylius-logo-800.png">
-          <img alt="Sylius Logo." src="https://media.sylius.com/sylius-logo-800.png">
-        </picture>
-    </a>
-</p>
+# Order Admin Note
 
-<h1 align="center">Sylius Standard Edition</h1>
+Adds a single free-text note per order, manageable only from the admin panel, with a 500-character limit.
 
-<p align="center">This is Sylius Standard Edition repository for starting new projects.</p>
+## What was built
 
-## About
+-   **Entity**: `App\Entity\Order\Order::$adminNote` (nullable `TEXT` column `admin_note` on `sylius_order`), behind a dedicated `App\Entity\Order\AdminNoteAwareInterface` (`getAdminNote()` / `setAdminNote()` / `hasAdminNote()` / `MAX_ADMIN_NOTE_LENGTH`). `setAdminNote()` trims whitespace and normalizes an empty/blank string to `null`.
+-   **Validation**: `Length` constraint (max 500) declared in `config/validator/Order.yaml`, scoped to a dedicated `app_order_admin_note` validation group so it never interferes with unrelated `Order` validation.
+-   **Form**: `App\Form\Type\Order\OrderAdminNoteType`, a single-field form bound directly to the `Order` entity.
+-   **Routes / controller**: two REST-ish, method-based routes on the same path, handled by `App\Controller\Admin\OrderAdminNoteController`:
+    -   `PUT /admin/orders/{id}/admin-note` → `update()` — validates and saves the note.
+    -   `DELETE /admin/orders/{id}/admin-note` → `remove()` — clears the note (no form; CSRF checked manually since there's no data to bind).
+    -   Both submit through the standard Symfony `_method` override, matching how Sylius itself submits its own PUT-based admin actions.
+-   **Use case / persistence**: `App\Command\UpdateOrderAdminNoteCommand` + `App\Command\UpdateOrderAdminNoteHandler` — the only place that mutates and flushes the entity. Keeps the controller a thin HTTP-to-use-case adapter.
+-   **UI**: a "Admin note" card injected into the order show page in the admin panel via a Twig Hook (`sylius_admin.order.show.content.sections#right`), rendered by `App\Twig\OrderAdminNoteFormExtension` (builds the `FormView` for that hook, since no controller normally supplies one there) and `templates/admin/order/component/admin_note_form.html.twig`.
+-   **UX detail**: on a failed validation (note too long), the submitted value and errors are flashed for one redirect cycle so the textarea re-renders with the rejected text and Bootstrap's `is-invalid` styling — a classic post/redirect/get pattern, no JavaScript required.
 
-Sylius is the first decoupled eCommerce framework based on [**Symfony**](http://symfony.com) and [**Doctrine**](http://doctrine-project.org). 
-The highest quality of code, strong testing culture, built-in Agile (BDD) workflow and exceptional flexibility make it the best solution for application tailored to your business requirements. 
-Enjoy being an eCommerce Developer again!
+## Admin-only visibility
 
-Powerful REST API allows for easy integrations and creating unique customer experience on any device.
+The note is **only** reachable through the admin controller/template above. It is not part of:
 
-We're using full-stack Behavior-Driven-Development, with [Behat](http://behat.org)
+-   any shop-facing Twig template or the checkout `OrderType`,
+-   any API Platform serialization group (admin or shop) — properties are opt-in there, not auto-exposed,
+-   customer emails or PDF/invoice generation.
 
-## Documentation
-
-Documentation is available at [docs.sylius.com](http://docs.sylius.com).
-
-## Installation
-
-### Traditional
-```bash
-$ wget http://getcomposer.org/composer.phar
-$ php composer.phar create-project sylius/sylius-standard project
-$ cd project
-$ yarn install
-$ yarn build
-$ php bin/console sylius:install
-$ symfony serve
-$ open http://localhost:8000/
-```
-
-For more detailed instruction about traditional way of running Sylius please visit [installation chapter in our docs](https://docs.sylius.com/the-book/sylius-ce-installation).
-
-### Docker
-
-You can run Sylius and all associated infrastructure dependencies (PHP, Nginx, MySQL, Node) on your machine using only Docker containers. Make sure you have installed [Docker](https://docs.docker.com/get-docker/) on your local machine.
-
-**Option 1: Get the latest release**
-```bash
-LATEST=$(curl -s https://api.github.com/repos/Sylius/Sylius-Standard/releases/latest | grep '"tag_name"' | cut -d'"' -f4)
-curl -L -o sylius-latest.zip https://github.com/Sylius/Sylius-Standard/archive/refs/tags/$LATEST.zip
-unzip sylius-latest.zip
-cd Sylius-Standard-*
-```
-
-**Option 2: List available versions**
-```bash
-curl -s https://api.github.com/repos/Sylius/Sylius-Standard/releases | grep '"tag_name"' | cut -d'"' -f4 | head -10
-```
-
-**Option 3: Get a specific version**
-```bash
-VERSION="v2.x.x"  # Replace with desired version
-curl -L -o sylius-$VERSION.zip https://github.com/Sylius/Sylius-Standard/archive/refs/tags/$VERSION.zip
-unzip sylius-$VERSION.zip
-cd Sylius-Standard-*
-```
-
-**Initialize the project (required for all options):**
-```bash
-make init
-```
-
-For more detailed instruction about Docker way of running Sylius please visit [Docker installation chapter in our docs](https://docs.sylius.com/getting-started-with-sylius/sylius-ce-installation-with-docker).
-
-## Troubleshooting
-
-If something goes wrong, errors & exceptions are logged at the application level:
+## Tests
 
 ```bash
-$ tail -f var/log/prod.log
-$ tail -f var/log/dev.log
+docker compose exec php vendor/bin/phpunit tests/Unit
 ```
 
-## Contributing
+Covers: entity note normalization, the update/remove use-case handler (with mocked repository/entity manager), and form-level validation (valid note, >500 chars rejected, exactly 500 accepted, empty note clears an existing one).
 
-Would like to help us and build the most developer-friendly eCommerce framework? Start from reading our [Contribution Guide](https://docs.sylius.com/en/latest/contributing/)!
+## Known technical debt / possible improvements
 
-## Stay Updated
-
-If you want to keep up with the updates, [follow the official Sylius account on Twitter](http://twitter.com/Sylius) and [like us on Facebook](https://www.facebook.com/SyliusEcommerce/).
-
-## Bug Tracking
-
-If you want to report a bug or suggest an idea, please use [GitHub issues](https://github.com/Sylius/Sylius/issues).
-
-## Community Support
-
-Get Sylius support on [Slack](https://sylius.com/slack), [Forum](https://forum.sylius.com/) or [Stack Overflow](https://stackoverflow.com/questions/tagged/sylius).
-
-## MIT License
-
-Sylius is completely free and released under the [MIT License](https://github.com/Sylius/Sylius/blob/master/LICENSE).
-
-## Authors
-
-Sylius was originally created by [Paweł Jędrzejewski](http://pjedrzejewski.com).
-See the list of [contributors from our awesome community](https://github.com/Sylius/Sylius/contributors).
+-   No fine-grained permission check — any logged-in admin can edit/remove the note, not just a specific role.
+-   No automated end-to-end test — only unit tests; the HTTP flow was verified manually (no test DB configured).
+-   `migrations/Version20260925101325.php` is unrelated diff noise (messenger table) and should be split out.
+-   No audit trail (who/when changed the note).
+-   No Behat coverage, only PHPUnit.
+-   A few CSRF/flash-key string literals are duplicated instead of centralized as constants.
